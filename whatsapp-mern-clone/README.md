@@ -1,70 +1,179 @@
-# Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Mailer :
 
-## Available Scripts
+1. Configure mail values in config/global.js
 
-In the project directory, you can run:
+	- update smtp values in 'mailOptions' object
 
-### `npm start`
+2. This is a complete example to send an e-mail with plaintext and HTML body
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+	var Mailer = rootRequire('support/mailer');
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+ 	Mailer.mail({
+		to 		: 'xcode@agileinfoways.com',
+		from 	: 'xcode',
+		subject : 'xCode Team - Information',
+		html	: 'Testing'
+	}, function(error, info){
+		if(error){
+			return console.log(error);
+		}
+		console.log('Message sent: ' + info.response);
+	});
 
-### `npm test`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+# Push Notification :
 
-### `npm run build`
+1. Configure notification values in config/global.js
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+  - update smtp values in 'FCM' object for FCM and put 'pem' file into 'support/push-notifications/pemFiles' directory for APN
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. How to send APN/FCM notification
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+	var PN = rootRequire('support/push-notifications/pn');
 
-### `npm run eject`
+	var params = {
+		to : 'dsde34e34e',
+		data  : { message : 'xCode' }
+	};
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+	// send iOS notification if iOS device type
+	PN.apn(params, function(error, result){
+		if(error){
+			return console.log(error);
+		}
+		console.log('Sent: ', result);
+	});
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+	// OR
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+	// send Android notification if Android device type
+	PN.fcm(params, function(error, result){
+		if(error){
+			return console.log(error);
+		}
+		console.log('Sent: ', result);
+	});
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-## Learn More
+#  Socket.io :
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+1. How to use socket instance to create apis
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+	var SocketIO = rootRequire('support/socket.io');
 
-### Code Splitting
+	SocketIO.on('io', function(io){ // instance of socket connect
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+		var nsp = io.of('/xcode'); 	// create a namespace
 
-### Analyzing the Bundle Size
+		nsp.on('connection', function(socket){
+			console.log('user namespace connection established!!!');
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+			socket.emit('welcome', 'You are welcome');
+			socket.on('message', function(message){
+				socket.emit('message', message);
+			});
+		});
 
-### Making a Progressive Web App
+		// OR
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+		// direct usage without creating namespace
+		// io.on('connection', function(socket) {
+		//	 console.log('connection established!!!');
+		// });
+	});
 
-### Advanced Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+# Uploader :
 
-### Deployment
+ - use method in api controller function and get files & fields data from http request
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+1. How to use formdata in api
 
-### `npm run build` fails to minify
+	apiControllerHandler : function(req, res){
+		Uploader.getFormFields(req, function(err, fields, files){
+			if(err){
+				return res.send({success: 0, message: 'Oops! something went wrong.'});
+			}
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+			console.log(fields, files);
+		});
+	}
+
+
+# Run script on boot time
+- which forever - a command to find a path for forever
+- sudo pico /etc/rc.local
+- /usr/bin/sudo -u agile -H /usr/local/bin/forever start /opt/Nodeserver/x-code/forever.json | while IFS= read -r line; do echo "$(date) $line"; done >> /opt/Nodeserver/x-code/logs/startup.log 2>&1
+
+  # Note:
+   - node lib should be in /usr/bin/node
+   - otherwise use command below
+       - sudo ln -s "$(which node)" /usr/bin/node
+
+
+# Useful URLS of our Framework
+- http://localhost:3000/socket (Socket APIs Testing - only json parameters excepted)
+- http://localhost:3000/v1/encode  (to encode json - only json parameters excepted)
+- http://localhost:3000/v1/decode (to decode string - encoded string value excepted)
+
+
+# API USAGE :
+
+1. Login API :
+
+@headers :- null
+@params :-
+{
+	"email" : "admin@agile.com",
+	"password": "123456"
+}
+@response :-
+{
+    "status": 1,
+    "message": "Login successfully",
+    "data": {
+        "email": "admin@agile.com",
+        "password": "123456",
+        "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOjEsImVtYWlsIjoiYWRtaW5AYWdpbGUuY29tIiwiaWF0IjoxNDk4MjAxMzkxLCJleHAiOjE0OTgyODc3OTF9.oEIyrBswpNcWV4KsZ986Ok5lQF_P0TRAM726MfUYw1g"
+    }
+}
+
+# ENCODED :
+@headers :- null
+@params[ENCODED] :-
+{
+	"encoded":"cJ19m46hnWaX6uS+oX1YagR++jfIDH7CXUDxjJ/v05DkSLQL9ajoRbl15SdknmmJ"
+}
+@response[ENCODED] :-
+{
+    "status": 1,
+    "message": "Login successfully",
+    "data": "cJ19m46hnWaX6uS+oX1YagR++jfIDH7CXUDxjJ/v05C9ZVStxMb4jZuUzwdfG52o3gayH5IWGaLPw7aAA2eDCotuDwlCDHWEz12NNyKbr8Pg9vsC0MEfV393nbJKL1f/Ax833H4tzHUV4EgwbUucfKF+Vtbk3E/eaOXAtONbBE8tmJEG2XDDvXsBdqPzMMpAZ3RsWZs9iZ3cIpJwKqkW3yrCTH3NitI1gYexf6O+OE5gy+CD/SSBLkmhvjVME22edPu2tqdnf+YZvoO7wLRIUAIk3pa+r+MAxLOGtjezoPTvWJtZCTqhbK5di2Vg6BMi"
+}
+
+
+2. Test API :
+@headers :-
+ - authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOjEsImVtYWlsIjoiYWRtaW5AYWdpbGUuY29tIiwiaWF0IjoxNDk4MjAwNjIwLCJleHAiOjE0OTgyODcwMjB9.FbIEyI1Y8tjPbQwk-DtVza2zqJ0jeOnKfMZU8XJDvrc
+@params :- null
+@response :-
+{
+    "status": 1,
+    "message": "TEST MESSAGE",
+    "data": {
+        "message": "test"
+    }
+}
+
+# ENCODED :
+@headers :-
+ - authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOjEsImVtYWlsIjoiYWRtaW5AYWdpbGUuY29tIiwiaWF0IjoxNDk4MjAwNjIwLCJleHAiOjE0OTgyODcwMjB9.FbIEyI1Y8tjPbQwk-DtVza2zqJ0jeOnKfMZU8XJDvrc
+@params[ENCODED] :-
+ - encoded: uh9KfKhJBpMcba%2BvVyS%2B%2BQ%3D%3D
+@response[ENCODED] :-
+{
+    "status": 1,
+    "message": "TEST MESSAGE",
+    "data": "npvvE57GDL4lNAPsQ0moJG9MepRtoDzugzFPbOatByw="
+}
